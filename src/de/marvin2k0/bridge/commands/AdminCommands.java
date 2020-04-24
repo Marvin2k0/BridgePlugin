@@ -2,8 +2,9 @@ package de.marvin2k0.bridge.commands;
 
 import de.marvin2k0.bridge.BridgePlugin;
 import de.marvinleiers.gameapi.GameAPI;
-import de.marvinleiers.gameapi.game.Game;
+import de.marvin2k0.bridge.game.Game;
 import de.marvinleiers.gameapi.manage.GameAlreadyExistsExeption;
+import de.marvinleiers.gameapi.manage.TooManySpawnsException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -40,7 +41,7 @@ public class AdminCommands implements CommandExecutor
            - shop
          */
 
-        if (args.length != 3)
+        if (args.length < 3)
         {
             getHelp(player);
 
@@ -51,30 +52,52 @@ public class AdminCommands implements CommandExecutor
         {
             try
             {
-                int slots = Integer.valueOf(args[2]);
+                Game.Mode mode = Game.Mode.getFromString(args[2]);
 
-                Game game = new Game(args[1], slots);
+                if (mode == null)
+                {
+                    player.sendMessage(plugin.get("modes").replace("%input%", args[2]));
+
+                    return true;
+                }
+
+                Game game = new Game(args[1], mode);
             }
-            catch(GameAlreadyExistsExeption e)
+            catch (GameAlreadyExistsExeption e)
             {
                 player.sendMessage(plugin.get("gamealreadyexists").replace("%game%", args[1]));
             }
-            catch (Exception e)
+            catch (NumberFormatException e)
             {
                 player.sendMessage(plugin.get("nonum"));
             }
+
+            player.sendMessage(plugin.get("gamecreated"));
 
             return true;
         }
         else if (args[0].equalsIgnoreCase("add"))
         {
+            if (args.length != 3)
+            {
+                getHelp(player);
+
+                return true;
+            }
+
             String game = args[1];
 
             if (GameAPI.getGameManager().exists(game))
             {
-                GameAPI.getSpawnManager().setSpawn(game, args[2], player.getLocation());
-
-                player.sendMessage(plugin.get("spawnset").replace("%spawn%", args[2]));
+                try
+                {
+                    int spawnsLeft = GameAPI.getSpawnManager().setSpawn(game, args[2], player.getLocation());
+                    player.sendMessage(plugin.get("spawnset").replace("%spawn%", args[2]).replace("%left%", spawnsLeft + ""));
+                }
+                catch (TooManySpawnsException e)
+                {
+                    player.sendMessage(plugin.get("nospawnsleft"));
+                }
             }
             else
             {
@@ -85,6 +108,13 @@ public class AdminCommands implements CommandExecutor
         }
         else if (args[0].equalsIgnoreCase("remove"))
         {
+            if (args.length != 3)
+            {
+                getHelp(player);
+
+                return true;
+            }
+
             String game = args[1];
 
             if (GameAPI.getGameManager().exists(game))
@@ -104,11 +134,10 @@ public class AdminCommands implements CommandExecutor
 
     private void getHelp(Player player)
     {
-        player.sendMessage("§9==========§aBridge§9==========");
-        player.sendMessage("§a/b create <game> <slots> §9- §aCreates a game");
+        player.sendMessage("§9==========" + plugin.get("prefix") + "§9==========");
+        player.sendMessage("§a/b create <game> <mode>§9- §aCreates a game");
         player.sendMessage("§a/b add <game> <spawn> §9- §aAdds a spawn to the game.");
         player.sendMessage("§a/b remove <game> <spawn> §9- §aRemoves the spawn from the game.");
-        player.sendMessage("§a/b sign <game> §9- §aGives you a join sign for the game.");
-        player.sendMessage("§9==========§aBridge§9==========");
+        player.sendMessage("§9==========" + plugin.get("prefix") + "§9==========");
     }
 }

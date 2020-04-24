@@ -3,7 +3,7 @@ author: Marvin2k0
 version: 1.0
 main: de.marvin2k0.bridge.BridgePlugin
 commands:
-  bridge:
+  bridgewars:
     permission: bridge.admin
     aliases:
-      - b
+      - bw
