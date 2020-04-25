@@ -4,11 +4,15 @@ import de.marvin2k0.bridge.BridgePlugin;
 import de.marvinleiers.gameapi.GameAPI;
 import de.marvin2k0.bridge.game.Game;
 import de.marvinleiers.gameapi.manage.GameAlreadyExistsExeption;
+import de.marvinleiers.gameapi.manage.GameManager;
 import de.marvinleiers.gameapi.manage.TooManySpawnsException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+
+import java.util.Map;
 
 public class AdminCommands implements CommandExecutor
 {
@@ -26,6 +30,30 @@ public class AdminCommands implements CommandExecutor
 
         final Player player = (Player) sender;
 
+        if (args.length == 0)
+        {
+            getHelp(player);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("leave"))
+        {
+            GameManager gameManager = GameManager.getGameManager();
+
+            for (Game game : gameManager.getGames())
+            {
+                if (game.getPlayers().contains(player))
+                {
+                    game.leave(player);
+                    return true;
+                }
+            }
+
+            player.sendMessage(plugin.get("notingame"));
+
+            return true;
+        }
+
         if (!player.hasPermission("bridge.admin"))
         {
             player.sendMessage(plugin.get("noperm"));
@@ -41,15 +69,15 @@ public class AdminCommands implements CommandExecutor
            - shop
          */
 
-        if (args.length < 3)
-        {
-            getHelp(player);
-
-            return true;
-        }
-
         if (args[0].equalsIgnoreCase("create"))
         {
+            if (args.length != 3)
+            {
+                getHelp(player);
+
+                return true;
+            }
+
             try
             {
                 Game.Mode mode = Game.Mode.getFromString(args[2]);
@@ -62,6 +90,7 @@ public class AdminCommands implements CommandExecutor
                 }
 
                 Game game = new Game(args[1], mode);
+                player.sendMessage(plugin.get("gamecreated"));
             }
             catch (GameAlreadyExistsExeption e)
             {
@@ -71,8 +100,6 @@ public class AdminCommands implements CommandExecutor
             {
                 player.sendMessage(plugin.get("nonum"));
             }
-
-            player.sendMessage(plugin.get("gamecreated"));
 
             return true;
         }
@@ -128,7 +155,33 @@ public class AdminCommands implements CommandExecutor
                 player.sendMessage(plugin.get("nogame").replace("%game%", game));
             }
         }
+        else if (args[0].equalsIgnoreCase("lobby"))
+        {
+            if (args.length != 3)
+            {
+                getHelp(player);
 
+                return true;
+            }
+
+            String game = args[1];
+
+            if (GameAPI.getGameManager().exists(game))
+            {
+                Game gameobj = GameAPI.getGameManager().getGameFromName(game);
+                gameobj.setLobby(player.getLocation());
+
+                player.sendMessage(plugin.get("lobbyset") + " for " + gameobj.getName());
+            }
+            else
+            {
+                player.sendMessage(plugin.get("nogame").replace("%game%", game));
+            }
+
+            return true;
+        }
+
+        getHelp(player);
         return true;
     }
 

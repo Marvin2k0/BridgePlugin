@@ -1,6 +1,7 @@
 package de.marvin2k0.bridge;
 
 import de.marvin2k0.bridge.commands.AdminCommands;
+import de.marvin2k0.bridge.listener.GameListener;
 import de.marvin2k0.bridge.listener.SignListener;
 import de.marvinleiers.gameapi.GameAPI;
 import de.marvinleiers.gameapi.logger.LogLevel;
@@ -28,6 +29,7 @@ public class BridgePlugin extends JavaPlugin
         this.getCommand("bridgewars").setExecutor(new AdminCommands());
 
         this.getServer().getPluginManager().registerEvents(new SignListener(), this);
+        this.getServer().getPluginManager().registerEvents(new GameListener(), this);
 
         api = new GameAPI(this);
     }
@@ -36,6 +38,8 @@ public class BridgePlugin extends JavaPlugin
     {
         getConfig().options().copyDefaults(true);
         getConfig().addDefault("prefix", "&c[&6BridgeWars&c] &f");
+        getConfig().addDefault("gamejoin", "&7[&a+&7] %player%");
+        getConfig().addDefault("gameleave", "&7[&c-&7] %player%");
         getConfig().addDefault("onlyplayers", "&cThis command is only for players!");
         getConfig().addDefault("noperm", "&cYou don't have permission to do that!");
         getConfig().addDefault("nonum", "&cPlease only enter numbers for the slots.");
@@ -46,8 +50,16 @@ public class BridgePlugin extends JavaPlugin
         getConfig().addDefault("nospawnsleft", "&cThere are no spawns left to be set");
         getConfig().addDefault("spawnremove", "&aSpawn %spawn% has been removed.");
         getConfig().addDefault("modes", "&cModes are: 1v1, 2v2, 4x1 (1v1v1v1). You entered &4%input%");
+        getConfig().addDefault("lobbyset", "&aLobby has been set!");
+        getConfig().addDefault("leavecommand", "me 'please change 'leavecommand' in your config to your leave command (e.g. /lobby)'");
+        getConfig().addDefault("notingame", "&cYour are not in a game!");
 
         saveConfig();
+    }
+
+    public String getLeaveCommand()
+    {
+        return getConfig().getString("leavecommand");
     }
 
     public String get(String path)
